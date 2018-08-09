@@ -2,9 +2,6 @@
 #define WirmphtEnabled 1
 
 #define _CRT_SECURE_NO_WARNINGS 1
-#include <windows.h>
-#include <Shlwapi.h>
-#include <malloc.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -39,6 +36,8 @@ typedef float real32;
 typedef double real64;
 
 typedef real32 real;
+typedef float f32;
+typedef double f64;
 
 typedef int8_t i8;
 typedef int16_t i16;
@@ -53,7 +52,6 @@ typedef uint64_t u64;
 typedef ptrdiff_t isize;
 typedef size_t usize;
 
-#define $(...)
 
 #define FilePathMaxLength (4096)
 

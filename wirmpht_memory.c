@@ -21,11 +21,7 @@ static inline isize mem_align_4(isize p)
 
 void init_memory_arena(Memory_Arena* arena, usize size)
 {
-//#if RITUALS_WINDOWS
-	arena->data = (uint8*)VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-//#elif RITUALS_LINUX
-//	arena->data = (uint8*)calloc(sizeof(uint8), size);
-//#endif
+	arena->data = (uint8*)calloc(sizeof(uint8), size);
 	arena->capacity = (isize)size;
 	arena->head = (isize)arena->data;
 	arena->temp_head = -1;
@@ -52,24 +48,14 @@ void start_temp_arena(Memory_Arena* arena)
 
 void end_temp_arena(Memory_Arena* arena)
 {
-//#if RITUALS_WINDOWS
-	VirtualAlloc((char*)arena->temp_head, 
-			arena->head - arena->temp_head, 
-			MEM_RESET, PAGE_EXECUTE_READWRITE);
-//#elif RITUALS_LINUX == 1
-	//memset((void*)arena->data, 0, arena->head - arena->temp_head);
-//#endif
+	memset((void*)arena->data, 0, arena->head - arena->temp_head);
 	arena->head = arena->temp_head;
 	arena->temp_head = -1;
 }
 
 void clear_arena(Memory_Arena* arena)
 {
-	//memset(arena->data, 0, arena->head - (isize)arena->data);
-//#if RITUALS_WINDOWS == 1
-	VirtualFree(arena->data, arena->capacity, MEM_DECOMMIT);
-	arena->data = (uint8*)VirtualAlloc(arena->data, arena->capacity, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-//#elif RITUALS_LINUX == 1
+	memset(arena->data, 0, arena->head - (isize)arena->data);
 	//free(arena->data);
 	//arena->data = (uint8*)calloc(sizeof(uint8), arena->capacity);
 //#endif

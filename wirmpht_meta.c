@@ -49,7 +49,7 @@ bool meta_type_equals(MetaType* a, MetaType* b)
 	return a->hash == b->hash;
 }
 
-void populate_meta_type(Struct_Member* member, Struct_Kind kind, Struct_Def* parent, MetaType* meta)
+void populate_meta_type(Struct_Member* member, i32 kind, Struct_Def* parent, MetaType* meta)
 {
 #define defhash(v) Hash v##hash = hash_literal(#v)
 	defhash(const);
@@ -79,7 +79,7 @@ void populate_meta_type(Struct_Member* member, Struct_Kind kind, Struct_Def* par
 	}
 }
 
-MetaType* get_types_in_struct(Struct_Def* def, MetaType* head, Memory_Arena* arena)
+MetaType* get_types_in_struct(Struct_Def* def, MetaType* head, wb_MemoryArena* arena)
 {
 	for(isize i = 0; i < def->member_count; ++i) {
 		if(def->member_kinds[i] == StructKind_Member) {

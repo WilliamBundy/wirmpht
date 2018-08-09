@@ -1,5 +1,5 @@
 
-enum Struct_Kind
+enum i32
 {
 	StructKind_None,
 	StructKind_Struct,
@@ -16,7 +16,7 @@ struct Struct_Def
 	char* name;
 	char* parentname;
 	char* pre_typedef_name;
-	Struct_Kind kind;
+	i32 kind;
 
 	isize meta_index;
 	char* meta_type_name;
@@ -27,7 +27,7 @@ struct Struct_Def
 	bool is_typedefed_struct;
 
 	Struct_Member* members;
-	Struct_Kind* member_kinds;
+	i32* member_kinds;
 	isize member_count;
 
 
@@ -69,7 +69,7 @@ void print_indent(int32 indent)
 	}
 }
 
-void print_struct_names(Struct_Def* def, isize index, char* prefix, isize prefix_len, char* suffix, Struct_Def** all_structs, isize* counter, Memory_Arena* arena)
+void print_struct_names(Struct_Def* def, isize index, char* prefix, isize prefix_len, char* suffix, Struct_Def** all_structs, isize* counter, wb_MemoryArena* arena)
 {
 	if(def->kind == StructKind_None) return;
 	isize chars = 0;
@@ -234,7 +234,7 @@ void print_struct(Struct_Def* def, bool as_member_struct, int32 indent)
 
 
 
-Token* parse_struct_member(Lexer* lex, Struct_Def* parent, Token* start, Memory_Arena* arena)
+Token* parse_struct_member(Lexer* lex, Struct_Def* parent, Token* start, wb_MemoryArena* arena)
 {
 	Hash structhash = hash_literal("struct");
 	Hash unionhash = hash_literal("union");
@@ -242,7 +242,7 @@ Token* parse_struct_member(Lexer* lex, Struct_Def* parent, Token* start, Memory_
 	Token* next = head->next;
 	
 	Struct_Member* member = parent->members + parent->member_count;
-	Struct_Kind* kind = parent->member_kinds + parent->member_count;
+	i32* kind = parent->member_kinds + parent->member_count;
 
 	if(head->kind == Token_Identifier) {
 		bool contains_brace = false;
@@ -273,7 +273,7 @@ Token* parse_struct_member(Lexer* lex, Struct_Def* parent, Token* start, Memory_
 			head = head->next;
 			Struct_Def def = {0};
 			def.members = arena_push_array(arena, Struct_Member, StructMemberCapacity);
-			def.member_kinds = arena_push_array(arena, Struct_Kind, StructMemberCapacity);
+			def.member_kinds = arena_push_array(arena, i32, StructMemberCapacity);
 			def.kind = *kind;
 			do {
 				head = parse_struct_member(lex, &def, head, arena);
@@ -354,7 +354,7 @@ Token* parse_struct_member(Lexer* lex, Struct_Def* parent, Token* start, Memory_
 						var->name = var->terms[--var->count];
 					}
 					parent->member_count++;
-					Struct_Kind oldkind = *kind;
+					i32 oldkind = *kind;
 					member = parent->members + parent->member_count;
 					kind = parent->member_kinds + parent->member_count;
 					*kind = oldkind;
@@ -405,7 +405,7 @@ Token* parse_struct_member(Lexer* lex, Struct_Def* parent, Token* start, Memory_
 }
 
 
-Struct_Def* find_struct_defs(Lexer* lex, Token* start, Memory_Arena* arena)
+Struct_Def* find_struct_defs(Lexer* lex, Token* start, wb_MemoryArena* arena)
 {
 	Token* head = start;
 	Token* next = NULL;
@@ -453,7 +453,7 @@ Struct_Def* find_struct_defs(Lexer* lex, Token* start, Memory_Arena* arena)
 			brace_depth = 0;
 		}
 
-		Struct_Kind kind = StructKind_None;
+		i32 kind = StructKind_None;
 		bool is_typedef_struct = false;
 		Token* pre_typedef_name = NULL;
 		if(head->hash == typedefhash) {
@@ -510,7 +510,7 @@ Struct_Def* find_struct_defs(Lexer* lex, Token* start, Memory_Arena* arena)
 			memset(&def, 0, sizeof(Struct_Def));
 			def.kind = kind;
 			def.members = arena_push_array(arena, Struct_Member, StructMemberCapacity);
-			def.member_kinds = arena_push_array(arena, Struct_Kind, StructMemberCapacity);
+			def.member_kinds = arena_push_array(arena, i32, StructMemberCapacity);
 			Token* subhead = head->next;
 			do {
 				if(subhead->kind == Token_Identifier) {

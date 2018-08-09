@@ -1,5 +1,5 @@
 
-typedef uint64 Hash;
+typedef u64 Hash;
 
 Hash hash_string(char* c, int len)
 {
@@ -22,7 +22,7 @@ static inline int32 dec_str_to_int(char* str, isize len)
 
 #define hash_literal(c) hash_string(c, sizeof(c) - 1)
 
-enum Token_Kind
+enum 
 {
 	Token_Unknown,
 
@@ -75,7 +75,7 @@ enum Token_Kind
 	Operator_Increment,
 
 	Token_EndOfFile,
-	Token_Kind_Count,
+	i32_Count,
 	
 };
 
@@ -89,7 +89,7 @@ struct Lexer_Location
 
 struct Token
 {
-	Token_Kind kind;	
+	i32 kind;	
 	char* start;
 	isize len;
 	Hash hash;
@@ -122,7 +122,7 @@ struct Lexer_File
 };
 #endif
 
-void init_lexer_file(Lexer_File* file, char* filename, char* prev_path, isize prev_path_len, Memory_Arena* arena)
+void init_lexer_file(Lexer_File* file, char* filename, char* prev_path, isize prev_path_len, wb_MemoryArena* arena)
 {
 	isize len = strlen(filename);
 	char* filename_copy = arena_push_array(arena, char, len + prev_path_len+1);
@@ -171,7 +171,7 @@ struct Lexer
 };
 #endif
 
-void init_lexer(Lexer* lex, isize file_capacity, Memory_Arena* arena)
+void init_lexer(Lexer* lex, isize file_capacity, wb_MemoryArena* arena)
 {
 	lex->files = arena_push_array(arena, Lexer_File, file_capacity);
 	lex->files_count = 0;

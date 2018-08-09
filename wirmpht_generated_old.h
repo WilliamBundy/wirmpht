@@ -1,3 +1,4 @@
+typedef struct Memory_Arena Memory_Arena;
 typedef struct Metaprogram_Core Metaprogram_Core;
 typedef struct Lexer_Location Lexer_Location;
 typedef struct Token Token;
@@ -12,11 +13,99 @@ typedef union Struct_Member Struct_Member;
 typedef struct MetaType MetaType;
 typedef struct Meta_Member Meta_Member;
 typedef enum Meta_Flags Meta_Flags;
-typedef u64 Hash;
+typedef enum Token_Kind Token_Kind;
+typedef enum Struct_Kind Struct_Kind;
+typedef int32_t bool;
+typedef int8_t int8;
+typedef int16_t int16;
+typedef int32_t int32;
+typedef int64_t int64;
+typedef uint8_t uint8;
+typedef uint16_t uint16;
+typedef uint32_t uint32;
+typedef uint64_t uint64;
+typedef float real32;
+typedef double real64;
+typedef real32 real;
+typedef int8_t i8;
+typedef int16_t i16;
+typedef int32_t i32;
+typedef int64_t i64;
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
+typedef ptrdiff_t isize;
+typedef size_t usize;
+typedef uint64 Hash;
+enum Wirmpht_MetaType
+{
+	Meta_Type_Memory_Arena,
+	Meta_Type_Metaprogram_Core,
+	Meta_Type_Lexer_Location,
+	Meta_Type_Token,
+	Meta_Type_Lexer_File,
+	Meta_Type_Lexer,
+	Meta_Type_Proc_Arg,
+	Meta_Type_Proc_Prototype,
+	Meta_Type_Struct_Def,
+	Meta_Type_Struct_Anon_Member,
+	Meta_Type_Struct_Member_Var,
+	Meta_Type_Struct_Member,
+	Meta_Type_MetaType,
+	Meta_Type_Meta_Member,
+	Meta_Type_uint8,
+	Meta_Type_isize,
+	Meta_Type_bool,
+	Meta_Type_i32,
+	Meta_Type_char,
+	Meta_Type_Hash,
+	Meta_Type_int32,
+	Meta_Type_uint32,
+	Meta_Type_uint64,
+};
+const char* Meta_Type_Names[] = {
+	"Memory_Arena",
+	"Metaprogram_Core",
+	"Lexer_Location",
+	"Token",
+	"Lexer_File",
+	"Lexer",
+	"Proc_Arg",
+	"Proc_Prototype",
+	"Struct_Def",
+	"Struct_Anon_Member",
+	"Struct_Member_Var",
+	"Struct_Member",
+	"MetaType",
+	"Meta_Member",
+	"uint8",
+	"isize",
+	"bool",
+	"i32",
+	"char",
+	"Hash",
+	"i32",
+	"int32",
+	"uint32",
+	"uint64",
+};
+
+struct Memory_Arena
+{
+	uint8 *data;
+	isize capacity;
+	isize head;
+	isize temp_head;
+	Memory_Arena *next;
+};
 
 struct Metaprogram_Core
 {
 	bool verbose;
+	Memory_Arena base_arena;
+	Memory_Arena work_arena;
+	Memory_Arena temp_arena;
 };
 
 struct Lexer_Location
@@ -144,11 +233,43 @@ struct Meta_Member
 	char *name;
 };
 
-char* load_file(char* filename, isize* size_out, wb_MemoryArena* arena);
+typedef struct Wirmpht_NullEmpty Wirmpht_NullEmpty;
+struct Wirmpht_NullEmpty
+{
+	int nothing;
+};
+
+typedef struct Wirmpht_StructMember Wirmpht_StructMember;
+struct Wirmpht_StructMember
+{
+	char* name;
+	isize offset;
+	i32 flags;
+	i32 type;
+	i32 pointerDepth;
+};
+
+typedef struct Wirmpht_StructInfo Wirmpht_StructInfo;
+struct Wirmpht_StructInfo
+{
+	char* name;
+	char* metaName;
+	isize index;
+	Wirmpht_StructMember* members;
+	i32 count;
+};
+
+void init_memory_arena(Memory_Arena* arena, usize size);
+uint8* arena_push(Memory_Arena* arena, isize size);
+void start_temp_arena(Memory_Arena* arena);
+void end_temp_arena(Memory_Arena* arena);
+void clear_arena(Memory_Arena* arena);
+Memory_Arena* new_memory_arena(usize size, Memory_Arena* src);
+char* load_file(char* filename, isize* size_out, Memory_Arena* arena);
 Hash hash_string(char* c, int len);
 void print_token(Token* t, Token* start);
-void init_lexer_file(Lexer_File* file, char* filename, char* prev_path, isize prev_path_len, wb_MemoryArena* arena);
-void init_lexer(Lexer* lex, isize file_capacity, wb_MemoryArena* arena);
+void init_lexer_file(Lexer_File* file, char* filename, char* prev_path, isize prev_path_len, Memory_Arena* arena);
+void init_lexer(Lexer* lex, isize file_capacity, Memory_Arena* arena);
 Lexer_File* get_next_file(Lexer* lex);
 bool is_space(char c);
 bool is_number(char c);
@@ -164,26 +285,17 @@ void print_proc_prototype(Proc_Prototype* p);
 Proc_Prototype* find_proc_prototypes(Lexer* lex, Token* start, Memory_Arena* arena);
 void odin_print_proc_prototype(Proc_Prototype* p);
 void print_indent(int32 indent);
-void print_struct_names(Struct_Def* def, isize index, char* prefix, isize prefix_len, char* suffix, Struct_Def** all_structs, isize* counter, wb_MemoryArena* arena);
+void print_struct_names(Struct_Def* def, isize index, char* prefix, isize prefix_len, char* suffix, Struct_Def** all_structs, isize* counter, Memory_Arena* arena);
 void print_struct(Struct_Def* def, bool as_member_struct, int32 indent);
-Token* parse_struct_member(Lexer* lex, Struct_Def* parent, Token* start, wb_MemoryArena* arena);
-Struct_Def* find_struct_defs(Lexer* lex, Token* start, wb_MemoryArena* arena);
+Token* parse_struct_member(Lexer* lex, Struct_Def* parent, Token* start, Memory_Arena* arena);
+Struct_Def* find_struct_defs(Lexer* lex, Token* start, Memory_Arena* arena);
 void odin_print_struct(Struct_Def* def, bool as_member_struct, int32 indent);
 bool meta_type_equals(MetaType* a, MetaType* b);
 void populate_meta_type(Struct_Member* member, i32 kind, Struct_Def* parent, MetaType* meta);
-MetaType* get_types_in_struct(Struct_Def* def, MetaType* head, wb_MemoryArena* arena);
+MetaType* get_types_in_struct(Struct_Def* def, MetaType* head, Memory_Arena* arena);
 void print_meta_member(Meta_Member* member, char* prefix, char* suffix);
 void print_struct_info(Struct_Def* def, char* prefix, char* suffix);
 void print_reflection_data(Struct_Def* def);
 void print_metaprogram_types();
 void print_metaprogram_get_struct_info_proc();
-void w_printTypedefs(Struct_Def* s_head);
-void w_printEnumDefs(Token* start);
-void w_extractExistingTypedefs(Token* start);
-MetaType* w_findUniqueTypes(MetaType* type_start, Struct_Def* structdef);
-void w_printMetaTypeEnum(Struct_Def* structdef, Struct_Def** all_structs, MetaType* unique_type_start, isize* num_structs);
-void w_printStructs(Struct_Def* structdef);
-void w_printMetadata(isize num_structs, Struct_Def** all_structs);
-void w_printProcs(Proc_Prototype* pstart);
-void w_printOdin(Struct_Def* structdef, Proc_Prototype* pstart);
 int main(int argc, char** argv);
