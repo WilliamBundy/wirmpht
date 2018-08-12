@@ -67,12 +67,12 @@ char* load_file(char* filename, isize* size_out, wb_MemoryArena* arena)
 int main(int argc, char** argv)
 {
 	//Core + arena initialization
-	wb_MemoryInfo memInfo = wb_getMemInfo();
-	baseArena = wb_arenaBootstrap(memInfo);
-	workArena = wb_arenaBootstrap(memInfo);
-	tempArena = wb_arenaBootstrap(memInfo);
+	wb_MemoryInfo memInfo = wb_getMemoryInfo();
+	baseArena = wb_arenaBootstrap(memInfo, 0);
+	workArena = wb_arenaBootstrap(memInfo, 0);
+	tempArena = wb_arenaBootstrap(memInfo, 0);
 	//TODO(will): remove the whole metaprogram stuff
-	Metaprogram = wb_arenaPush(base, sizeof(Metaprogram_Core));
+	Metaprogram = wb_arenaPush(baseArena, sizeof(Metaprogram_Core));
 
 	//argc = 2;
 	//flags
@@ -130,13 +130,13 @@ int main(int argc, char** argv)
 	Metaprogram->verbose = vflag;
 	if(file != NULL && istherework) {
 		Lexer lex;
-		init_lexer(&lex, 1024, Work_Arena);
-		init_lexer_file(get_next_file(&lex), file, NULL, 0, Work_Arena);
+		init_lexer(&lex, 1024, workArena);
+		init_lexer_file(get_next_file(&lex), file, NULL, 0, workArena);
 		if(lex.files[0].head == NULL) {
 			fprintf(stderr, "Error: File %s was null\n", lex.files[0].filename);
 		}
 
-		Token* head = arena_push_struct(Work_Arena, Token);
+		Token* head = wb_arenaPush(workArena, sizeof(Token));
 		Token* start = head;
 		Token* last = NULL;
 		Token t;
@@ -146,7 +146,7 @@ int main(int argc, char** argv)
 				head->next = NULL;
 				break;
 			}
-			head->next = arena_push_struct(Work_Arena, Token);
+			head->next = wb_arenaPush(workArena, sizeof(Token));
 			head->prev = last;
 			last = head;
 			head = head->next;
@@ -154,24 +154,24 @@ int main(int argc, char** argv)
 		head->prev = last;
 
 		parse_tokens(&lex, start);
-		Proc_Prototype* p = find_proc_prototypes(&lex, start, Work_Arena);
+		Proc_Prototype* p = find_proc_prototypes(&lex, start, workArena);
 		Proc_Prototype* pstart = p;
-		Struct_Def* structdef = find_struct_defs(&lex, start, Work_Arena);
+		Struct_Def* structdef = find_struct_defs(&lex, start, workArena);
 
 		if(Metaprogram->verbose) fprintf(stderr, "Found %d procedures, "
 				"%d structs \n\n",
 				lex.procedures_count, lex.structs_count);
 
 		Struct_Def* s_head = structdef;
-		MetaType* type_start = arena_push_struct(Work_Arena, MetaType);
+		MetaType* type_start = wb_arenaPush(workArena, sizeof(MetaType));
 		MetaType* type_head = NULL;
 		do {
 			if(s_head->name == NULL) continue;
 
 			if(type_head == NULL) {
-				type_head = get_types_in_struct(s_head, type_start, Work_Arena);
+				type_head = get_types_in_struct(s_head, type_start, workArena);
 			} else {
-				type_head = get_types_in_struct(s_head, type_head, Work_Arena); 
+				type_head = get_types_in_struct(s_head, type_head, workArena); 
 			}
 		} while(s_head = s_head->next);
 		type_head = type_start;
@@ -189,8 +189,8 @@ int main(int argc, char** argv)
 		isize num_structs = 0;
 		MetaType* unique_type_start = w_findUniqueTypes(type_start, s_head);
 
-		Struct_Def** all_structs = arena_push_array(Work_Arena, 
-				Struct_Def*, lex.structs_count + 16);
+		Struct_Def** all_structs = wb_arenaPush(workArena, 
+				sizeof(Struct_Def*) * (lex.structs_count + 16));
 
 		if(mflag) {
 			w_printMetaTypeEnum(structdef, all_structs, unique_type_start, &num_structs);

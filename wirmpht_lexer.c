@@ -125,7 +125,7 @@ struct Lexer_File
 void init_lexer_file(Lexer_File* file, char* filename, char* prev_path, isize prev_path_len, wb_MemoryArena* arena)
 {
 	isize len = strlen(filename);
-	char* filename_copy = arena_push_array(arena, char, len + prev_path_len+1);
+	char* filename_copy = wb_arenaPush(arena, len + prev_path_len+1);
 	memcpy(filename_copy, prev_path, prev_path_len);
 	memcpy(filename_copy + prev_path_len, filename, len);
 	filename_copy[len + prev_path_len] = '\0';
@@ -173,7 +173,7 @@ struct Lexer
 
 void init_lexer(Lexer* lex, isize file_capacity, wb_MemoryArena* arena)
 {
-	lex->files = arena_push_array(arena, Lexer_File, file_capacity);
+	lex->files = wb_arenaPush(arena, sizeof(Lexer_File) * file_capacity);
 	lex->files_count = 0;
 	lex->files_capacity = file_capacity;
 	lex->main_file = lex->files;

@@ -95,7 +95,7 @@ void w_extractExistingTypedefs(Token* start)
 MetaType* w_findUniqueTypes(MetaType* type_start, Struct_Def* structdef)
 {
 		// find uniquetypes
-		MetaType* unique_type_start = arena_push_struct(Work_Arena, MetaType);
+		MetaType* unique_type_start = wb_arenaPush(workArena, sizeof(MetaType));
 		*unique_type_start = *type_start;
 		unique_type_start->next = NULL;
 		MetaType* unique_type_head = unique_type_start;
@@ -122,7 +122,7 @@ MetaType* w_findUniqueTypes(MetaType* type_start, Struct_Def* structdef)
 					}
 				} while(s_head = s_head->next);
 				if(!eq) continue;
-				unique_type_head->next = arena_push_struct(Work_Arena, MetaType);
+				unique_type_head->next = wb_arenaPush(workArena, sizeof(MetaType));
 				unique_type_head = unique_type_head->next;
 				*unique_type_head = *type_head;
 				unique_type_head->next = NULL;
@@ -140,12 +140,12 @@ void w_printMetaTypeEnum(Struct_Def* structdef, Struct_Def** all_structs, MetaTy
 
 	do {
 		if(s_head->name == NULL) continue;
-		start_temp_arena(Temp_Arena);
+		wb_arenaStartTemp(tempArena);
 		print_struct_names(s_head, -1, 
 				"Meta_Type_", strlen("Meta_Type_"), ",\n",
 				all_structs, &meta_index_counter, 
-				Temp_Arena);
-		end_temp_arena(Temp_Arena);
+				tempArena);
+		wb_arenaEndTemp(tempArena);
 	} while(s_head = s_head->next);
 
 
@@ -170,12 +170,12 @@ void w_printMetaTypeEnum(Struct_Def* structdef, Struct_Def** all_structs, MetaTy
 
 	do {
 		if(s_head->name == NULL) continue;
-		start_temp_arena(Temp_Arena);
+		wb_arenaStartTemp(tempArena);
 		print_struct_names(s_head, -1, 
 				"\"", strlen("\""), "\",\n",
 				NULL, NULL, 
-				Temp_Arena);
-		end_temp_arena(Temp_Arena);
+				tempArena);
+		wb_arenaEndTemp(tempArena);
 	} while(s_head = s_head->next);
 	type_start = unique_type_start;
 	type_head = type_start;

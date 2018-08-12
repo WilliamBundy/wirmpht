@@ -87,7 +87,7 @@ MetaType* get_types_in_struct(Struct_Def* def, MetaType* head, wb_MemoryArena* a
 		} else {
 			get_types_in_struct(&def->members[i].anon_struct.def, head, arena);
 		}
-		head->next = arena_push_struct(arena, MetaType); 
+		head->next = wb_arenaPush(arena, sizeof(MetaType)); 
 		head = head->next;
 	}
 	return head;

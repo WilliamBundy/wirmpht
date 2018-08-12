@@ -21,11 +21,11 @@ void parse_number_tokens(Token* head)
 
 void parse_include_directive(Lexer* lex, Token* directive)
 {
-	start_temp_arena(Temp_Arena);
-	char* buf = arena_push_array(Temp_Arena, char, directive->len + 1);
+	wb_arenaStartTemp(tempArena);
+	char* buf = wb_arenaPush(tempArena, directive->len + 1);
 	memcpy(buf, directive->start, directive->len);
 	buf[directive->len] = '\0';
-	Token* head = arena_push_struct(Temp_Arena, Token);
+	Token* head = wb_arenaPush(tempArena, sizeof(Token));
 	Token* start = head;
 
 	{
@@ -35,36 +35,36 @@ void parse_include_directive(Lexer* lex, Token* directive)
 		f.start = buf;
 		while(lexer_get_token(NULL, &f, &t)) {
 			*head = t;
-			head->next = arena_push_struct(Temp_Arena, Token);
+			head->next = wb_arenaPush(tempArena, sizeof(Token));
 			head = head->next;
 		}
 		head->next = NULL;
 	}
 
 	if(start->hash != hash_string("include", sizeof("include") - 1)) {
-		end_temp_arena(Temp_Arena);
+		wb_arenaEndTemp(tempArena);
 		return;
 	}
 
 	head = start;
 	do {
 		if(head->kind == Token_String) {
-			char* filename = arena_push_array(Temp_Arena, char, head->len + 1);
+			char* filename = wb_arenaPush(tempArena,  head->len + 1);
 			memcpy(filename, head->start, head->len);
 			filename[head->len] = '\0';
 			Lexer_File* file = get_next_file(lex);
 			Lexer_File* including = lex->files + directive->location.file;
-			init_lexer_file(file, filename, including->filename, including->pathlen, Work_Arena);
+			init_lexer_file(file, filename, including->filename, including->pathlen, workArena);
 
 			if(file->start != NULL) {
 				if(Metaprogram->verbose) fprintf(stderr, ">>> Adding file %s\n", filename);
-				Token* new_file_head = arena_push_struct(Work_Arena, Token);
+				Token* new_file_head = wb_arenaPush(workArena, sizeof(Token));
 				Token* new_file_start = new_file_head;
 				Token* last = directive;
 				Token t;
 				while(lexer_get_token(lex, file, &t)) {
 					*new_file_head = t;
-					new_file_head->next = arena_push_struct(Work_Arena, Token);
+					new_file_head->next = wb_arenaPush(workArena, sizeof(Token));
 					new_file_head->prev = last;
 					last = new_file_head;
 					new_file_head = new_file_head->next;
@@ -81,7 +81,7 @@ void parse_include_directive(Lexer* lex, Token* directive)
 		}
 	} while(head = head->next);
 
-	end_temp_arena(Temp_Arena);
+	wb_arenaEndTemp(tempArena);
 }
 
 
@@ -189,7 +189,7 @@ void parse_tokens(Lexer* lex, Token* start)
 					head->len++;
 					head->next = next->next;
 				} else if(next && next->kind == Token_Number) {
-					Token_Kind prevkind = Token_Unknown;
+					i32 prevkind = Token_Unknown;
 					if(head->prev != NULL) {
 						prevkind = head->prev->kind;
 					}
@@ -219,7 +219,7 @@ void parse_tokens(Lexer* lex, Token* start)
 
 }
 
-bool match_pattern3(Token* head, Token_Kind a, Token_Kind b, Token_Kind c)
+bool match_pattern3(Token* head, i32 a, i32 b, i32 c)
 {
 	if(head->kind == a) {
 		if(head->next != NULL)

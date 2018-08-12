@@ -1,5 +1,5 @@
 
-enum i32
+enum
 {
 	StructKind_None,
 	StructKind_Struct,
@@ -83,7 +83,7 @@ void print_struct_names(Struct_Def* def, isize index, char* prefix, isize prefix
 		*counter = local_counter + 1;
 	}
 
-	char* buf = arena_push_array(Work_Arena, char, 256);
+	char* buf = wb_arenaPush(workArena, 256);
 	if(index == -1) {
 		chars = snprintf(buf, 256, "%.*s%s", prefix_len, prefix, def->name);
 	} else {
@@ -109,7 +109,7 @@ void print_struct_names(Struct_Def* def, isize index, char* prefix, isize prefix
 		def->meta_type_name = buf;
 	}
 	printf("\t%s%s", buf, suffix);
-	char* new_prefix = arena_push_array(arena, char, chars + 256);
+	char* new_prefix = wb_arenaPush(arena, chars + 256);
 	prefix_len = chars;
 	if(index == -1) {
 		snprintf(new_prefix, chars, "%.*s%s_", prefix_len, prefix, def->name);
@@ -272,8 +272,8 @@ Token* parse_struct_member(Lexer* lex, Struct_Def* parent, Token* start, wb_Memo
 			} while(head->kind != Token_OpenBrace);
 			head = head->next;
 			Struct_Def def = {0};
-			def.members = arena_push_array(arena, Struct_Member, StructMemberCapacity);
-			def.member_kinds = arena_push_array(arena, i32, StructMemberCapacity);
+			def.members = wb_arenaPush(arena, sizeof(Struct_Member) * StructMemberCapacity);
+			def.member_kinds = wb_arenaPush(arena, sizeof(i32) *  StructMemberCapacity);
 			def.kind = *kind;
 			do {
 				head = parse_struct_member(lex, &def, head, arena);
@@ -298,7 +298,7 @@ Token* parse_struct_member(Lexer* lex, Struct_Def* parent, Token* start, wb_Memo
 							head->kind, head->len, head->start);
 				}
 			} else {
-				char* buf = arena_push_array(arena, char, 256);
+				char* buf = wb_arenaPush(arena, 256);
 				memcpy(buf, head->start, head->len);
 				int len = head->len;
 				next = head->next;
@@ -321,9 +321,9 @@ Token* parse_struct_member(Lexer* lex, Struct_Def* parent, Token* start, wb_Memo
 					case Token_OpenBracket: {						
 						head = head->next;
 						if(var->array_levels == 0) {
-							var->array_sizes = arena_push_array(arena, char*, 256);
+							var->array_sizes = wb_arenaPush(arena, sizeof(char*) * 256);
 						}
-						char* buf = arena_push_array(arena, char, head->len + 1);
+						char* buf = wb_arenaPush(arena,  head->len + 1);
 						memcpy(buf, head->start, head->len);
 						int len = head->len;
 						next = head->next;
@@ -339,7 +339,7 @@ Token* parse_struct_member(Lexer* lex, Struct_Def* parent, Token* start, wb_Memo
 		} else {
 			*kind = StructKind_Member;
 			Struct_Member_Var* var = &member->member_var;
-			var->terms = arena_push_array(arena, char*, 256);
+			var->terms = wb_arenaPush(arena, sizeof(char*) * 256);
 			var->count = 0;
 			var->asterisk_count = 0;
 			var->name = NULL;
@@ -371,7 +371,7 @@ Token* parse_struct_member(Lexer* lex, Struct_Def* parent, Token* start, wb_Memo
 					}
 					break;
 				} else if(head->kind == Token_Identifier) {
-					char* buf = arena_push_array(arena, char, head->len + 1);
+					char* buf = wb_arenaPush(arena, head->len + 1);
 					memcpy(buf, head->start, head->len);
 					int len = head->len;
 					next = head->next;
@@ -387,9 +387,9 @@ Token* parse_struct_member(Lexer* lex, Struct_Def* parent, Token* start, wb_Memo
 				} else if(head->kind == Token_OpenBracket) {
 					head = head->next;
 					if(var->array_levels == 0) {
-						var->array_sizes = arena_push_array(arena, char*, 256);
+						var->array_sizes = wb_arenaPush(arena, sizeof(char*) * 256);
 					}
-					char* buf = arena_push_array(arena, char, head->len + 1);
+					char* buf = wb_arenaPush(arena, head->len + 1);
 					memcpy(buf, head->start, head->len);
 					int len = head->len;
 					next = head->next;
@@ -415,7 +415,7 @@ Struct_Def* find_struct_defs(Lexer* lex, Token* start, wb_MemoryArena* arena)
 	Hash typedefhash = hash_literal("typedef");
 	Struct_Def def = {0};
 
-	Struct_Def* def_start = arena_push_struct(arena, Struct_Def);
+	Struct_Def* def_start = wb_arenaPush(arena, sizeof(Struct_Def));
 	Struct_Def* def_head = def_start;
 
 	int32 brace_depth = 0;
@@ -509,13 +509,13 @@ Struct_Def* find_struct_defs(Lexer* lex, Token* start, wb_MemoryArena* arena)
 			// if(is_typedef_struct) __debugbreak();
 			memset(&def, 0, sizeof(Struct_Def));
 			def.kind = kind;
-			def.members = arena_push_array(arena, Struct_Member, StructMemberCapacity);
-			def.member_kinds = arena_push_array(arena, i32, StructMemberCapacity);
+			def.members = wb_arenaPush(arena, sizeof(Struct_Member) * StructMemberCapacity);
+			def.member_kinds = wb_arenaPush(arena, sizeof(i32) * StructMemberCapacity);
 			Token* subhead = head->next;
 			do {
 				if(subhead->kind == Token_Identifier) {
 					//this is the name
-					char* buf = arena_push_array(arena, char, subhead->len + 1);
+					char* buf = wb_arenaPush(arena,  subhead->len + 1);
 					memcpy(buf, subhead->start, subhead->len);
 					buf[subhead->len] = '\0';
 					def.name = buf;
@@ -535,7 +535,7 @@ Struct_Def* find_struct_defs(Lexer* lex, Token* start, wb_MemoryArena* arena)
 				subhead = subhead->next;
 				if(subhead->kind == Token_Identifier) {
 					//this is the name
-					char* buf = arena_push_array(arena, char, subhead->len + 1);
+					char* buf = wb_arenaPush(arena, subhead->len + 1);
 					memcpy(buf, subhead->start, subhead->len);
 					buf[subhead->len] = '\0';
 					def.name = buf;
@@ -548,7 +548,7 @@ Struct_Def* find_struct_defs(Lexer* lex, Token* start, wb_MemoryArena* arena)
 			def.is_typedefed_struct = is_typedef_struct;
 
 			*def_head = def;
-			def_head->next = arena_push_struct(arena, Struct_Def); 
+			def_head->next = wb_arenaPush(arena, sizeof(Struct_Def)); 
 			def_head = def_head->next;
 		}
 	} while(head = head->next);

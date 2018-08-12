@@ -9,9 +9,9 @@ struct Proc_Arg
 };
 #endif
 
-void init_proc_arg(Proc_Arg* arg, isize count, Memory_Arena* arena)
+void init_proc_arg(Proc_Arg* arg, isize count, wb_MemoryArena* arena)
 {
-	arg->terms = arena_push_array(arena, char*, count);
+	arg->terms = wb_arenaPush(arena, sizeof(char*) * count);
 	arg->defaults = NULL;
 	arg->count = 0;
 }
@@ -75,7 +75,7 @@ void print_proc_prototype(Proc_Prototype* p)
 
 }
 
-Proc_Prototype* find_proc_prototypes(Lexer* lex, Token* start, Memory_Arena* arena)
+Proc_Prototype* find_proc_prototypes(Lexer* lex, Token* start, wb_MemoryArena* arena)
 {
 	//NOTE(will) will not find C-style "struct Type function() {"
 	//TODO(will) Contains code for default arguments, which aren't generated -- delete
@@ -84,7 +84,7 @@ Proc_Prototype* find_proc_prototypes(Lexer* lex, Token* start, Memory_Arena* are
 	Hash structhash = hash_literal("struct");
 	Hash enumhash = hash_literal("enum");
 
-	Proc_Prototype* proc_start = arena_push_struct(arena, Proc_Prototype);
+	Proc_Prototype* proc_start = wb_arenaPush(arena, sizeof(Proc_Prototype));
 	Proc_Prototype* proc_head = proc_start;
 
 	do {
@@ -99,8 +99,8 @@ Proc_Prototype* find_proc_prototypes(Lexer* lex, Token* start, Memory_Arena* are
 				//	mode 2 <open brace>
 				//proc = {0};
 				Proc_Prototype proc = {0};
-				proc.decorators = arena_push_array(arena, char*, 256);
-				proc.args = arena_push_array(arena, Proc_Arg, 256);
+				proc.decorators = wb_arenaPush(arena, sizeof(char*) * 256);
+				proc.args = wb_arenaPush(arena, sizeof(Proc_Arg) * 256);
 				proc.start = head;
 
 				Token* sub_head = head;
@@ -120,7 +120,7 @@ Proc_Prototype* find_proc_prototypes(Lexer* lex, Token* start, Memory_Arena* are
 					switch(mode) {
 						case 0:
 							if (sub_head->kind == Token_Identifier) {
-								char* buf = arena_push_array(arena, char, 256);
+								char* buf = wb_arenaPush(arena, 256);
 								memcpy(buf, sub_head->start, sub_head->len);
 								int len = sub_head->len;
 								next = sub_head->next;
@@ -145,7 +145,7 @@ Proc_Prototype* find_proc_prototypes(Lexer* lex, Token* start, Memory_Arena* are
 									if(default_args_token != NULL) {
 										char* start = default_args_token->start;
 										isize len = sub_head->start - start + sub_head->len;
-										char* buf = arena_push_array(arena, char, len+1);
+										char* buf = wb_arenaPush(arena, len+1);
 										memcpy(buf, start, len);
 										buf[len] = '\0';
 										arg->defaults = buf;
@@ -157,7 +157,7 @@ Proc_Prototype* find_proc_prototypes(Lexer* lex, Token* start, Memory_Arena* are
 								}
 							} else if(sub_head->kind == Token_Identifier) {
 								if(default_args_token == NULL) {
-									char* buf = arena_push_array(arena, char, 256);
+									char* buf = wb_arenaPush(arena, 256);
 									memcpy(buf, sub_head->start, sub_head->len);
 									int len = sub_head->len;
 									next = sub_head->next;
@@ -177,7 +177,7 @@ Proc_Prototype* find_proc_prototypes(Lexer* lex, Token* start, Memory_Arena* are
 										//TODO(will) code duplication
 										char* start = default_args_token->start;
 										isize len = sub_head->start - start + sub_head->len;
-										char* buf = arena_push_array(arena, char, len+1);
+										char* buf = wb_arenaPush(arena, len+1);
 										memcpy(buf, start, len);
 										buf[len] = '\0';
 										arg->defaults = buf;
@@ -214,7 +214,7 @@ Proc_Prototype* find_proc_prototypes(Lexer* lex, Token* start, Memory_Arena* are
 						head = sub_head;
 						proc.end = head;
 						*proc_head = proc;
-						proc_head->next = arena_push_struct(arena, Proc_Prototype);
+						proc_head->next = wb_arenaPush(arena, sizeof(Proc_Prototype));
 						lex->procedures_count++;
 						proc_head = proc_head->next;
 						break;
